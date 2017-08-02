@@ -1,5 +1,7 @@
 # Seedr
 
+[![GoDoc](https://godoc.org/github.com/josephbuchma/seedr?status.svg)](https://godoc.org/github.com/josephbuchma/seedr)
+
 > WORK IN PROGRESS
 
 Seedr, being heavily inspired by [Factory Girl](https://github.com/thoughtbot/factory_girl),
