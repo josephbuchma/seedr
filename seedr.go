@@ -356,37 +356,37 @@ func (t *publicTrait) next(n int, ovr Trait) *rawTrait {
 				if err != nil {
 					panicf("Failed to get value of field %q: %s", k, err)
 				}
+				switch fv.(type) {
+				case *relationField, auto:
+				default:
+					nxt[k] = fv
+				}
+				if depsReady {
+					continue
+				}
 				switch v := fv.(type) {
 				case *relationField:
-					if !depsReady {
-						if v.lfield == "" {
-							if rel, ok := t.relations[k]; ok {
-								if _, ok := t.sdr.publicTraits[v.traitName]; !ok {
-									panicf("Trait %q does not exist (trait %q, field %q)", v.traitName, t.name, k)
-								}
-								v.kind = rel.kind
-								v.rfield = rel.rfield
-								v.lfield = rel.lfield
-							} else {
-								panicf("Relation %s is not defined for trait %s", k, t.name)
+					if v.lfield == "" {
+						if rel, ok := t.relations[k]; ok {
+							if _, ok := t.sdr.publicTraits[v.traitName]; !ok {
+								panicf("Trait %q does not exist (trait %q, field %q)", v.traitName, t.name, k)
 							}
-						}
-						rt.addRel(k, v)
-						if v.kind == relationParent {
-							rt.insertFields = append(rt.insertFields, v.lfield)
+							v.kind = rel.kind
+							v.rfield = rel.rfield
+							v.lfield = rel.lfield
+						} else {
+							panicf("Relation %s is not defined for trait %s", k, t.name)
 						}
 					}
-					continue
+					rt.addRel(k, v)
+					if v.kind == relationParent {
+						rt.insertFields = append(rt.insertFields, v.lfield)
+					}
 				case auto:
-					if !depsReady {
-						rt.returnFields = append(rt.returnFields, k)
-					}
-					continue
-				}
-				if !depsReady {
+					rt.returnFields = append(rt.returnFields, k)
+				default:
 					rt.insertFields = append(rt.insertFields, k)
 				}
-				nxt[k] = fv
 			}
 		}
 		depsReady = true
