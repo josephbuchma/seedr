@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/josephbuchma/seedr"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/models"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/seedrs"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/util"
@@ -293,6 +294,22 @@ func TestSeedrs(t *testing.T) {
 		Checkin:   mysql.NullTime{Time: util.TestTime, Valid: true},
 		CreatedAt: util.TestTime,
 	}, usr)
+
+	usr = models.User{}
+	club = models.Club{}
+	sdr.CreateCustom("Club", seedr.Trait{
+		"users": seedr.CreateRelated("User"),
+	}).Scan(&club).ScanRelated("users", &usr)
+
+	util.AssertDeepEqual(t, club, models.Club{ID: 3, Name: "Club-3"})
+	util.AssertDeepEqual(t, usr, models.User{
+		ID:        13,
+		Email:     "agentsmith-14@gmail.com",
+		Name:      "Agent Smith 14",
+		Active:    true,
+		Checkin:   mysql.NullTime{Time: util.TestTime, Valid: true},
+		CreatedAt: util.TestTime,
+	})
 }
 
 const benchBatchSize = 10000

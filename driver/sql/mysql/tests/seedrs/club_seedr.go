@@ -35,8 +35,8 @@ var _ = TestSeedr.Add("clubs", Factory{
 		PrimaryKey: "id",
 	},
 	Relations{
-		"club_id": BelongsTo("clubs", "id"),
-		"user_id": BelongsTo("users", "id"),
+		"club_id": BelongsTo("clubs"),
+		"user_id": BelongsTo("users"),
 	},
 	Traits{
 		"ClubToUser": {

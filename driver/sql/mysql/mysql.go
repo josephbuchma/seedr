@@ -26,6 +26,7 @@ func New(db *sql.DB) driver.Driver {
 }
 
 // Create inserts payload Data into database and returns inserted records
+// Entity is a table name. If PrimaryKey is not provided, no results will be returned.
 func (my *MySQL) Create(p driver.Payload) (results []map[string]interface{}, err error) {
 	tx, err := my.db.Begin()
 	if err != nil {
@@ -138,6 +139,9 @@ func (my *drv) insertRows(n int, table, pk string, insertFields, selectFields []
 	s := insertSQL(table, insertFields)
 	if err := my.exec(s, vals[0:len(insertFields)]); err != nil {
 		return nil, err
+	}
+	if pk == "" {
+		return nil, nil
 	}
 	if n == 1 {
 		s = selectLastSQL(table, pk, selectFields)

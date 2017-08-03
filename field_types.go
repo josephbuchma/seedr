@@ -93,7 +93,7 @@ func Loop(slice interface{}) Generator {
 // mnSliceSeq yields every element of given slice n times
 func mnSliceSeq(s []interface{}, n int) Generator {
 	i, j := 0, -1
-	return Func(func() interface{} {
+	return Func(func() (ret interface{}) {
 		j++
 		if j < n {
 			return s[i]

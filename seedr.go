@@ -341,55 +341,57 @@ func (t *publicTrait) next(n int, ovr Trait) *rawTrait {
 
 	for i := 0; i < n; i++ {
 		nxt := make(Trait)
-		ovrCnt := 0
-		for k, v := range t.trait {
-			if ovr != nil {
-				if ov, ok := ovr[k]; ok {
-					v = ov
-					ovrCnt++
-				}
-			}
-			fv, err := getFieldValue(v)
-			if err != nil {
-				panicf("Failed to get value of field %q: %s", k, err)
-			}
-			switch v := fv.(type) {
-			case *relationField:
-				if !depsReady {
-					if v.lfield == "" {
-						if rel, ok := t.relations[k]; ok {
-							if _, ok := t.sdr.publicTraits[v.traitName]; !ok {
-								panicf("Trait %q does not exist (trait %q, field %q)", v.traitName, t.name, k)
-							}
-							v.kind = rel.kind
-							v.rfield = rel.rfield
-							v.lfield = rel.lfield
-						} else {
-							panicf("Relation %s is not defined for trait %s", k, t.name)
+		for i, trait := range []Trait{t.trait, ovr} {
+			for k, v := range trait {
+				if ovr != nil {
+					if ov, ok := ovr[k]; ok {
+						if i == 0 {
+							v = ov
+						} else if _, ok := t.trait[k]; ok {
+							continue
 						}
 					}
-					rt.addRel(k, v)
-					if v.kind == relationParent {
-						rt.insertFields = append(rt.insertFields, v.lfield)
+				}
+				fv, err := getFieldValue(v)
+				if err != nil {
+					panicf("Failed to get value of field %q: %s", k, err)
+				}
+				switch v := fv.(type) {
+				case *relationField:
+					if !depsReady {
+						if v.lfield == "" {
+							if rel, ok := t.relations[k]; ok {
+								if _, ok := t.sdr.publicTraits[v.traitName]; !ok {
+									panicf("Trait %q does not exist (trait %q, field %q)", v.traitName, t.name, k)
+								}
+								v.kind = rel.kind
+								v.rfield = rel.rfield
+								v.lfield = rel.lfield
+							} else {
+								panicf("Relation %s is not defined for trait %s", k, t.name)
+							}
+						}
+						rt.addRel(k, v)
+						if v.kind == relationParent {
+							rt.insertFields = append(rt.insertFields, v.lfield)
+						}
 					}
+					continue
+				case auto:
+					if !depsReady {
+						rt.returnFields = append(rt.returnFields, k)
+					}
+					continue
 				}
-				continue
-			case auto:
 				if !depsReady {
-					rt.returnFields = append(rt.returnFields, k)
+					rt.insertFields = append(rt.insertFields, k)
 				}
-				continue
-			}
-			nxt[k] = fv
-			if !depsReady {
-				rt.insertFields = append(rt.insertFields, k)
+				nxt[k] = fv
 			}
 		}
 		depsReady = true
-		if ovrCnt != len(ovr) {
-			panicf("Override error: one or more fields are not exists in original Trait (%s), %#v", t.name, ovr)
-		}
 		rt.data = append(rt.data, nxt)
+
 	}
 	rt.returnFields = append(rt.insertFields, rt.returnFields...)
 	return rt
