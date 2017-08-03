@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/josephbuchma/seedr"
-	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/models"
-	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/seedrs"
-	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/util"
+	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/models"
+	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/seedrs"
+	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/util"
 )
 
 var schemaSQL = flag.String("schema", "test_db_schema.sql", "test db schema")

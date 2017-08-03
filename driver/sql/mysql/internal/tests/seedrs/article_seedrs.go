@@ -4,7 +4,7 @@ import (
 	"time"
 
 	. "github.com/josephbuchma/seedr"
-	"github.com/josephbuchma/seedr/driver/sql/mysql/tests/util"
+	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/util"
 )
 
 var _ = TestSeedr.Add("articles", Factory{
