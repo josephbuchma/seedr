@@ -137,6 +137,7 @@ type relationField struct {
 	lfield    string
 	rfield    string
 	n         int
+	override  Trait
 }
 
 // CreateRelated is a special Generator that will create related trait
@@ -150,5 +151,21 @@ func CreateRelated(traitName string) Generator {
 func CreateRelatedBatch(traitName string, n int) Generator {
 	return Func(func() interface{} {
 		return &relationField{traitName: traitName, n: n}
+	})
+}
+
+// CreateRelatedCustom is a special Generator that will create related trait
+// with additional changes.
+func CreateRelatedCustom(traitName string, override Trait) Generator {
+	return Func(func() interface{} {
+		return &relationField{traitName: traitName, n: 1, override: override}
+	})
+}
+
+// CreateRelatedBatchCustom is a special Generator that will create
+// a batch of related traits with additional changes.
+func CreateRelatedBatchCustom(traitName string, n int, override Trait) Generator {
+	return Func(func() interface{} {
+		return &relationField{traitName: traitName, n: n, override: override}
 	})
 }

@@ -424,13 +424,13 @@ func (t *publicTrait) drvCreate(ovr Trait, n int, drv driver.Driver) (ret *Trait
 				pks[i] = r[pkName]
 			}
 			for field, rel := range childs {
-				ins := t.sdr.getPublicTrait(rel.traitName).create(Trait{
+				ins := t.sdr.getPublicTrait(rel.traitName).create((Trait{
 					rel.lfield: mnSliceSeq(pks, rel.n),
-				}, len(rt.data)*rel.n)
+				}).merge(rel.override, false), len(rt.data)*rel.n)
 				ret.childs[field] = ins.chop(n)
 			}
 			for field, rel := range m2ms {
-				rels := t.sdr.getPublicTrait(rel.traitName).create(nil, len(rt.data)*rel.n)
+				rels := t.sdr.getPublicTrait(rel.traitName).create(rel.override, len(rt.data)*rel.n)
 				relpks := make([]interface{}, rels.Len())
 				for i, r := range rels.data {
 					relpks[i] = r[pkName]
@@ -448,7 +448,7 @@ func (t *publicTrait) drvCreate(ovr Trait, n int, drv driver.Driver) (ret *Trait
 		for field, rel := range rt.rels {
 			switch rel.kind {
 			case relationParent:
-				ins := t.sdr.getPublicTrait(rel.traitName).create(nil, len(rt.data))
+				ins := t.sdr.getPublicTrait(rel.traitName).create(rel.override, len(rt.data))
 				ret.parents[field] = ins
 			case relationChild:
 				childs[field] = rel

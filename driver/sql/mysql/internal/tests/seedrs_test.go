@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/josephbuchma/seedr"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/models"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/seedrs"
 	"github.com/josephbuchma/seedr/driver/sql/mysql/internal/tests/util"
@@ -289,13 +290,62 @@ func TestSeedrs(t *testing.T) {
 		util.AssertDeepEqual(t, expectedArticles, articles)
 	})
 
+	t.Run("CreateCustom with M2M relation", func(t *testing.T) {
+		usr := models.User{}
+		club := models.Club{}
+		sdr.CreateCustom("Club", seedr.Trait{
+			"users": seedr.CreateRelated("User"),
+		}).Scan(&club).ScanRelated("users", &usr)
+
+		util.AssertDeepEqual(t, club, models.Club{ID: 3, Name: "Club-3"})
+		util.AssertDeepEqual(t, usr, models.User{
+			ID:        13,
+			Email:     "agentsmith-13@gmail.com",
+			Name:      "Agent Smith 13",
+			Active:    true,
+			Checkin:   mysql.NullTime{Time: util.TestTime, Valid: true},
+			CreatedAt: util.TestTime,
+		})
+	})
+
+	t.Run("CreateCustom with M2M relation with inline CreateRelatedCustom with child relation", func(t *testing.T) {
+		usr := models.User{}
+		club := models.Club{}
+		article := models.Article{}
+		sdr.CreateCustom("Club", seedr.Trait{
+			"users": seedr.CreateRelatedCustom("User", seedr.Trait{
+				"articles": seedr.CreateRelated("Article"),
+			}),
+		}).Scan(&club).
+			ScanRelated("users", &usr).
+			Related("users").
+			ScanRelated("articles", &article)
+
+		util.AssertDeepEqual(t, club, models.Club{ID: 4, Name: "Club-4"})
+		util.AssertDeepEqual(t, usr, models.User{
+			ID:        14,
+			Email:     "agentsmith-14@gmail.com",
+			Name:      "Agent Smith 14",
+			Active:    true,
+			Checkin:   mysql.NullTime{Time: util.TestTime, Valid: true},
+			CreatedAt: util.TestTime,
+		})
+		util.AssertDeepEqual(t, article, models.Article{
+			ID:        12,
+			UserID:    14,
+			Title:     "Awesome Title 12",
+			Body:      "test body value",
+			CreatedAt: util.TestTime,
+		})
+	})
+
 	t.Run("Build instance", func(t *testing.T) {
 		usr := models.User{}
 		sdr.Build("TestUser").Scan(&usr)
 		util.AssertDeepEqual(t, models.User{
 			ID:        0,
-			Name:      "Agent Smith 13",
-			Email:     "agentsmith-13@gmail.com",
+			Name:      "Agent Smith 15",
+			Email:     "agentsmith-15@gmail.com",
 			Active:    true,
 			Checkin:   mysql.NullTime{Time: util.TestTime, Valid: true},
 			CreatedAt: util.TestTime,
