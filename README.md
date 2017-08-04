@@ -20,8 +20,8 @@ Let's assume we have MySQL database `testdb` with `users` table:
 create table users (
     id         int(10) unsigned not null auto_increment,
     name       varchar(250) not null,
-    sex        varchar(10) not null,
-    age        int(5) unsigned not null auto_increment,
+    sex        varchar(10),
+    age        int(5) unsigned,
     created_at datetime not null default NOW(),
     primary key (id)
 ) engine=InnoDB default charset=utf8;
@@ -35,6 +35,8 @@ package whatever
 import (
   "database/sql"
   "time"
+
+  _ "github.com/go-sql-driver/mysql"
 
   . "github.com/josephbuchma/seedr" // dot import for convenience.
   "github.com/josephbuchma/seedr/driver/sql/mysql"
@@ -59,7 +61,7 @@ var users = Factory{
       "name":       SequenceString("John-%d"), // produces John-1, John-2, John-3...
       "age":        nil,                       // nil -> NULL
       "sex":        nil,
-      "created_at": time.Now(),
+      "created_at": Func(func()interface{}{ return time.Now() },
     },
     "old": {
       "age": 80,
@@ -82,7 +84,7 @@ var users = Factory{
       "name":  "Ann",             // you can override any field
     },
     "YoungMan": {
-      Include: "base young man",
+      Include: "base young male",
     },
     "User9999": {
       Include: "base",
@@ -95,13 +97,13 @@ var users = Factory{
 // so New() will be seedr.New()
 
 var testdb = New("test_seedr",
-  seedr.SetCreateDriver(mysql.New(openTestDB())), // configure MySQL driver (openTestDB is at the end)
+  SetCreateDriver(mysql.New(openTestDB())), // configure MySQL driver (openTestDB is at the end)
   // field mapper is used for mapping trait fields to struct fields.
   // In this case seedr will look for `sql:"column_name"` tag, and if it's not
   // provided it'll fall back to SnakeFieldMapper, which converts struct field
   // name to snake case.
-  seedr.SetFieldMapper(
-    seedr.TagFieldMapper("sql", seedr.SnakeFieldMapper()),
+  SetFieldMapper(
+    TagFieldMapper("sql", seedr.SnakeFieldMapper()),
   ),
 ).Add("users", users) // add users factory
 
@@ -113,10 +115,10 @@ func test() {
   // Lines below are doing exactly what you're thinking (creating records in DB and initializing objects)
   // And yes, you can only create traits that starts with
   // capital letter (other traits are "private" to the factory,
-  // and can only be included by another traits in this factory)
+  // and can only be included by other traits in this factory)
   testdb.Create("User").Scan(&u)
+  testdb.Create("User9999").Scan(&u)
   testdb.CreateBatch("OldWoman", 10).Scan(&users)
-  testdb.CreateBatch("User9999", 10).Scan(&users)
   testdb.CreateCustom("User", Trait{
     "name": "Mike",
     "age":  22,
@@ -124,14 +126,15 @@ func test() {
   testdb.CreateCustomBatch("User", 4, Trait{
     "name": "Mike",
     "age":  22,
-  }).Scan(&u)
-  
+  }).Scan(&users)
+
   // You can also only "build" the object, without inserting to DB
   testdb.Build("User").Scan(&u) // u.ID == 0
 }
 
 // User model
 type User struct {
+  ID        int       `sql:"id"`
   Name      string    `sql:"name"`
   Age       *int      `sql:"age"`
   Sex       *string   `sql:"sex"`
