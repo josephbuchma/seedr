@@ -553,9 +553,9 @@ func (ti TraitInstance) CreateRelatedBatch(relation, traitName string, n int) Tr
 	return ti.createRelated(relation, traitName, n, nil)
 }
 
-// CreateRelatedBatchCustom creates n related instances with additional changes. Works for FK (child only) and M2M
+// CreateRelatedCustomBatch creates n related instances with additional changes. Works for FK (child only) and M2M
 // It returns original TraitInstance, not one that was created. Fetch created one using Related method.
-func (ti TraitInstance) CreateRelatedBatchCustom(relation, traitName string, n int, overrides Trait) TraitInstance {
+func (ti TraitInstance) CreateRelatedCustomBatch(relation, traitName string, n int, overrides Trait) TraitInstance {
 	return ti.createRelated(relation, traitName, n, overrides)
 }
 

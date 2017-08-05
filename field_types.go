@@ -162,9 +162,9 @@ func CreateRelatedCustom(traitName string, override Trait) Generator {
 	})
 }
 
-// CreateRelatedBatchCustom is a special Generator that will create
+// CreateRelatedCustomBatch is a special Generator that will create
 // a batch of related traits with additional changes.
-func CreateRelatedBatchCustom(traitName string, n int, override Trait) Generator {
+func CreateRelatedCustomBatch(traitName string, n int, override Trait) Generator {
 	return Func(func() interface{} {
 		return &relationField{traitName: traitName, n: n, override: override}
 	})
