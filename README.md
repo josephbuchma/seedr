@@ -45,23 +45,23 @@ import (
 // Define 'users' factory
 
 var users = Factory{
-  FactoryConfig: {
+  FactoryConfig{
     // Entity is a MySQL table name in this case
     Entity:     "users",
     PrimaryKey: "id",
   },
   // to see relations in action check out tests and docs (links below)
-  Relations: {},
+  Relations{},
   // Traits are different variations of user.
   // Each field of trait must be same as name of field in `users` table.
-  Traits: {
+  Traits{
     "base": {
       // Auto means that this field will be initialized by driver (DB)
       "id":         Auto(),
       "name":       SequenceString("John-%d"), // produces John-1, John-2, John-3...
       "age":        nil,                       // nil -> NULL
       "sex":        nil,
-      "created_at": Func(func()interface{}{ return time.Now() },
+      "created_at": Func(func()interface{}{ return time.Now() }),
     },
     "old": {
       "age": 80,
