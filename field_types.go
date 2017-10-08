@@ -26,6 +26,41 @@ func (g Func) Next() interface{} {
 	return g()
 }
 
+// Dependent holds field dependencies
+type Dependent struct {
+	fields []string
+	do     func(t Trait) interface{}
+}
+
+// DependsOn allows to initialize field
+// based on other fields of this trait.
+// Seedr will ensure that listed fields are initialized
+// before this one. It will panic on circular dependency.
+// Must be followed by #Generate.
+// Example:
+//
+//   "full_name": DependsOn("first_name", "last_name").Generate(func(this Trait)interface{}{
+//     return fmt.Sprintf("%s %s", this["first_name"], this["last_name"])
+//   },
+func DependsOn(fields ...string) Dependent {
+	return Dependent{fields: fields}
+}
+
+// Generate allows to compute value for field based on other fields of this trait.
+// See DependsOn
+func (d Dependent) Generate(f func(t Trait) interface{}) Generator {
+	d.do = f
+	return dependentField{d}
+}
+
+type dependentField struct {
+	Dependent
+}
+
+func (d dependentField) Next() interface{} {
+	return d.Dependent
+}
+
 // SequenceFunc creates generator from given func. On n'th .Next call it calls given func
 // with startFrom + n argument. By default startFrom == 1
 func SequenceFunc(f func(int) interface{}, startFrom ...int) Generator {

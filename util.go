@@ -36,3 +36,14 @@ func toSnake(in string) string {
 	}
 	return string(out)
 }
+
+type stringSice []string
+
+func (s stringSice) contains(str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}

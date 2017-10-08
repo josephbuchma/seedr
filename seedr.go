@@ -73,7 +73,7 @@ func getFieldValue(v interface{}) (interface{}, error) {
 	case int, uint, int8, uint8, int16,
 		uint16, int32, uint32, int64, uint64,
 		float32, float64, string, []byte, bool,
-		time.Time, sql.Scanner, auto, *relationField:
+		time.Time, sql.Scanner, auto, *relationField, dependentField:
 		return v, nil
 	case Generator:
 		return getFieldValue(v.Next())
@@ -301,6 +301,8 @@ type rawTrait struct {
 	rels  map[string]*relationField
 	data  []map[string]interface{}
 
+	dependent map[string]dependentField
+
 	insertFields, returnFields []string
 
 	iter int
@@ -335,8 +337,9 @@ func (t *publicTrait) normalizeRelations() {
 func (t *publicTrait) next(n int, ovr Trait) *rawTrait {
 	depsReady := false
 	rt := &rawTrait{
-		trait: t,
-		data:  make([]map[string]interface{}, 0, n),
+		trait:     t,
+		data:      make([]map[string]interface{}, 0, n),
+		dependent: make(map[string]dependentField),
 	}
 
 	for i := 0; i < n; i++ {
@@ -356,8 +359,10 @@ func (t *publicTrait) next(n int, ovr Trait) *rawTrait {
 				if err != nil {
 					panicf("Failed to get value of field %q: %s", k, err)
 				}
-				switch fv.(type) {
+				switch fv := fv.(type) {
 				case *relationField, auto:
+				case dependentField:
+					rt.dependent[k] = fv
 				default:
 					nxt[k] = fv
 				}
@@ -469,6 +474,12 @@ func (t *publicTrait) drvCreate(ovr Trait, n int, drv driver.Driver) (ret *Trait
 		}
 	}
 
+	if len(rt.dependent) > 0 {
+		for _, ti := range rt.data {
+			resolveDependentFields(ti, rt.dependent)
+		}
+	}
+
 	var err error
 	ret.data, err = drv.Create(driver.Payload{
 		Entity:       t.factory.FactoryConfig.Entity,
@@ -481,6 +492,35 @@ func (t *publicTrait) drvCreate(ovr Trait, n int, drv driver.Driver) (ret *Trait
 		panicf("Seedr Driver error: %s", err)
 	}
 	return ret
+}
+
+func resolveDependentField(f string, ti map[string]interface{}, dep map[string]dependentField,
+	resolved map[string]bool, stack []string) {
+	if len(stack) > 0 {
+		for i := len(stack) - 1; i >= 0; i-- {
+			if stack[i] == f {
+				circle := strings.Join(append(stack[i:], f), " -> ")
+				panicf("Circular field dependency: %s", circle)
+			}
+		}
+	}
+	stack = append(stack, f)
+	d := dep[f]
+	for _, df := range d.fields {
+		if _, ok := dep[df]; ok && !resolved[df] {
+			resolveDependentField(df, ti, dep, resolved, stack)
+		}
+	}
+	ti[f] = d.do(ti)
+	stack = stack[0 : len(stack)-1]
+}
+
+func resolveDependentFields(ti map[string]interface{}, dep map[string]dependentField) {
+	resolved := map[string]bool{}
+	stack := []string{}
+	for f := range dep {
+		resolveDependentField(f, ti, dep, resolved, stack)
+	}
 }
 
 // TraitInstance is a created trait instance
